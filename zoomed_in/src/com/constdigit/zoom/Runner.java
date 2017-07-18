@@ -3,82 +3,89 @@ package com.constdigit.zoom;
 import com.alee.extended.image.WebImage;
 import com.alee.extended.progress.WebStepProgress;
 import com.alee.laf.WebLookAndFeel;
-import com.alee.laf.slider.WebSlider;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Hashtable;
-import java.util.concurrent.*;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /*
     Works with gui and threads
  */
 public class Runner {
+
     private BufferedImage zoomedImage;
     private BufferedImage sourceImage;
+    //GUI components
     private JFrame frame;
     private JLabel sourceImageViewer;
     private JSlider coefficientSlider;
+    private WebStepProgress steps;
     private static final Color white = new Color(250, 250, 250);
     private static final Color black = new Color(30, 30, 30);
 
-    //TODO: наплодить комментов, залить на гитхаб
-
-    Runner() {
+    private Runner() {
         sourceImage = new BufferedImage(300, 300, BufferedImage.TYPE_3BYTE_BGR);
         for (int i = 0; i < 300; i++)
             for (int j = 0; j < 300; j++)
                 sourceImage.setRGB(j, i, Color.darkGray.getRGB());
     }
 
+    //generates a list of tasks and runs required number of threads
     private void startThreads() {
         int cores = Runtime.getRuntime().availableProcessors();
-        //cores = 1;
         ArrayList<Magnifier> tasks = new ArrayList<>();
         ExecutorService service;
 
         int pos = 0;
+        //each thread works with its part of the image
+        //splits image on columns if it is wide image
         if (sourceImage.getWidth() > sourceImage.getHeight()) {
+            //need at least 5 pixels
             while (sourceImage.getWidth() / cores < 5)
                 cores--;
 
             service = Executors.newFixedThreadPool(cores);
 
+            //generates tasks
             for (int i = 0; i < cores - 1; i++) {
                 tasks.add(new Magnifier(sourceImage.getSubimage(pos, 0, sourceImage.getWidth() / cores, sourceImage.getHeight())));
                 pos += sourceImage.getWidth() / cores;
             }
+            //remainder of the division
             tasks.add(new Magnifier(sourceImage.getSubimage(pos, 0,
                     sourceImage.getWidth() - (sourceImage.getWidth() / cores) * (cores - 1), sourceImage.getHeight())));
         }
+        //splits image on rows if it is high image
         else {
+            //need at least 5 pixels
             while (sourceImage.getHeight() / cores < 5)
                 cores--;
 
             service = Executors.newFixedThreadPool(cores);
 
+            //generates tasks
             for (int i = 0; i < cores - 1; i++) {
                 tasks.add(new Magnifier(sourceImage.getSubimage(0, pos, sourceImage.getWidth(), sourceImage.getHeight() / cores)));
                 pos += sourceImage.getHeight() / cores;
             }
+            //remainder of the division
             tasks.add(new Magnifier(sourceImage.getSubimage(0, pos,
                     sourceImage.getWidth(), sourceImage.getHeight() - (sourceImage.getHeight() / cores) * (cores - 1))));
         }
 
         try {
+            //start threads and wait for them to complete
             List<Future<BufferedImage>> zoomedParts = service.<BufferedImage>invokeAll(tasks);
             restoreImage(zoomedParts);
         }
@@ -87,13 +94,15 @@ public class Runner {
         }
     }
 
+    //collects in parts an zoomed image
     private void restoreImage(List<Future<BufferedImage>> zoomedParts) {
         int pos = 0;
-        int[] rgbArray = null;
-        BufferedImage current = null;
+        BufferedImage current;
+        //new size
         zoomedImage = new BufferedImage(sourceImage.getWidth() * (Magnifier.zoomCoefficient / 2),
                 sourceImage.getHeight() * (Magnifier.zoomCoefficient / 2), BufferedImage.TYPE_3BYTE_BGR);
 
+        //moves by width
         if (sourceImage.getWidth() > sourceImage.getHeight()) {
             for (Future<BufferedImage> part : zoomedParts) {
                 try {
@@ -101,18 +110,14 @@ public class Runner {
                     for (int y = 0; y < current.getHeight(); y++)
                         for (int x = 0; x < current.getWidth(); x++)
                             zoomedImage.setRGB(x + pos, y, current.getRGB(x, y));
-                    //rgbArray = current.getRGB(0, 0, current.getWidth(), current.getHeight(), null, 0, current.getWidth());
-                    //zoomedImage.setRGB(pos, 0, current.getWidth(), current.getHeight(), rgbArray, 0, current.getWidth());
                     pos += current.getWidth();
                 }
-                catch (InterruptedException ex) {
-                    ex.printStackTrace();
-                }
-                catch (ExecutionException ex) {
+                catch (InterruptedException | ExecutionException ex) {
                     ex.printStackTrace();
                 }
             }
         }
+        //moves by height
         else {
             for (Future<BufferedImage> part : zoomedParts) {
                 try {
@@ -120,14 +125,9 @@ public class Runner {
                     for (int y = 0; y < current.getHeight(); y++)
                         for (int x = 0; x < current.getWidth(); x++)
                             zoomedImage.setRGB(x, y + pos, current.getRGB(x, y));
-                    //rgbArray = current.getRGB(0, 0, current.getWidth(), current.getHeight(), null, 0, current.getWidth());
-                    //zoomedImage.setRGB(0, pos, current.getWidth(), current.getHeight(), rgbArray, 0, current.getWidth());
                     pos += current.getHeight();
                 }
-                catch (InterruptedException ex) {
-                    ex.printStackTrace();
-                }
-                catch (ExecutionException ex) {
+                catch (InterruptedException | ExecutionException ex) {
                     ex.printStackTrace();
                 }
             }
@@ -148,11 +148,6 @@ public class Runner {
         bar.setLayout(new BorderLayout(10, 10));
         bar.setPreferredSize(new Dimension(620, 100));
         bar.setBackground(black);
-
-        //stepper - show progress
-        //JPanel stepper = new JPanel();
-        //stepper.setLayout(new BorderLayout(10, 10));
-        //stepper.setPreferredSize(new Dimension(620, 60));
 
         //to open source image
         JPanel opener = new JPanel();
@@ -197,16 +192,12 @@ public class Runner {
         coefficientSlider.setLabelTable( labelTable );
         coefficientSlider.setPaintLabels(true);
 
-        //stepper components setting
-        //JLabel currentStepIcon = new JLabel();
-        //currentStepIcon.setIcon(new ImageIcon("resources/folder-icon.png"));
-        //JLabel currentStepText = new JLabel("Select image from file");
-        WebStepProgress steps = new WebStepProgress("Step 1: Select image and zoom coefficient", "Step 2: Zoom it", "Step 3: ");
-        //steps.addSteps(new WebImage("resources/folder-icon.png"));
-        //steps.addSteps(new WebImage("resources/magnifier-icon.png"));
-        //steps.addSteps(new WebImage("resources/done-icon.png"));
+        //stepper settings
+        steps = new WebStepProgress();
+        steps.addSteps(new WebImage("resources/folder-icon.png"));
+        steps.addSteps(new WebImage("resources/magnifier-icon.png"));
+        steps.addSteps(new WebImage("resources/done-icon.png"));
         steps.setLabelsPosition(SwingConstants.BOTTOM);
-        steps.setSelectedStepIndex(2);
 
         //adding all on frame
         bar.add(BorderLayout.LINE_START, menu);
@@ -216,8 +207,6 @@ public class Runner {
         zoomingOptions.add(BorderLayout.PAGE_START, hint);
         zoomingOptions.add(BorderLayout.CENTER, coefficientSlider);
         zoomingOptions.add(BorderLayout.PAGE_END, zoom);
-        //stepper.add(currentStepIcon);
-        //stepper.add(currentStepText);
         frame.add(BorderLayout.PAGE_START, bar);
         frame.add(BorderLayout.LINE_START, opener);
         frame.add(BorderLayout.LINE_END, zoomingOptions);
@@ -232,8 +221,12 @@ public class Runner {
     private class zoomButtonListener implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent actionEvent) {
+            //get selected zoom coefficient
             Magnifier.zoomCoefficient = coefficientSlider.getValue();
             startThreads();
+            //work is done
+            steps.setSelectedStepIndex(2);
+            //show result in new frame (in future - it would be saved in file or import in cloud)
             JFrame resultImage = new JFrame("Zoomed");
             resultImage.add(BorderLayout.CENTER, new JLabel(new ImageIcon(zoomedImage)));
             resultImage.pack();
@@ -254,6 +247,8 @@ public class Runner {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+
+            //adjust size
             Image dimg = sourceImage;
             int w = sourceImage.getWidth(), h = sourceImage.getHeight();
             if (w > sourceImageViewer.getWidth()) {
@@ -269,7 +264,8 @@ public class Runner {
                 dimg = sourceImage.getScaledInstance(w, sourceImageViewer.getHeight(), Image.SCALE_SMOOTH);
             }
             sourceImageViewer.setIcon(new ImageIcon(dimg));
-            //frame.repaint();
+            //go to step 2
+            steps.setSelectedStepIndex(1);
             frame.revalidate();
         }
     }

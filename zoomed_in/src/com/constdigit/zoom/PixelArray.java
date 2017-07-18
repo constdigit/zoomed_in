@@ -62,8 +62,4 @@ class PixelArray {
     int getY() {
         return mY;
     }
-
-    int size() {
-        return width * height;
-    }
 }

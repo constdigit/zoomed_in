@@ -9,30 +9,28 @@ import java.util.concurrent.Callable;
 import org.apache.commons.math3.analysis.interpolation.PiecewiseBicubicSplineInterpolatingFunction;
 
 public class Magnifier implements Callable<BufferedImage> {
-
+    //supporting
     private enum RGB {RED, GREEN, BLUE}
-    static final byte THRESHOLD = 20;
+    private static final byte THRESHOLD = 20;
     static int zoomCoefficient = 4;
-    int sourceWidth;
-    int sourceHeight;
+    private int sourceWidth;
+    private int sourceHeight;
     private RGB currentColorInProcess;
 
-    private BufferedImage source;
-    private BufferedImage zoomed;
-
+    //split image by color
     private PixelArray red;
     private PixelArray green;
     private PixelArray blue;
 
+    //splines for each color
     private ArrayList<PiecewiseBicubicSplineInterpolatingFunction> redSplines;
     private ArrayList<PiecewiseBicubicSplineInterpolatingFunction> greenSplines;
     private ArrayList<PiecewiseBicubicSplineInterpolatingFunction> blueSplines;
 
     private Stack<PixelArray> stack;
 
-    Magnifier(BufferedImage image) {
+    Magnifier(BufferedImage source) {
         Color color;
-        source = image;
         sourceWidth = source.getWidth();
         sourceHeight = source.getHeight();
         red = new PixelArray(sourceWidth, sourceHeight, 0, 0);
@@ -53,9 +51,11 @@ public class Magnifier implements Callable<BufferedImage> {
             }
     }
 
+    //returns true if teastable has pixels with a difference in values greater than threshold
     private boolean isDifference(PixelArray testable) {
         double min = testable.get(0, 0);
         double current;
+        //remembers the smallest value and moves to the end
         for (int i = 0; i < testable.getHeight(); i++)
             for (int j = 0; j < testable.getWidth(); j++) {
                 current = testable.get(i, j);
@@ -67,6 +67,7 @@ public class Magnifier implements Callable<BufferedImage> {
         return false;
     }
 
+    //splitting by threshold
     private void splitting() {
         PixelArray currentPart;
         PixelArray temp;
@@ -98,6 +99,12 @@ public class Magnifier implements Callable<BufferedImage> {
                         stack.push(temp);
                     }
                     else {
+//                        * * * * * * * *    * * * * * * * *
+//                        *             *    *     * *     *
+//                        *             * => *     * *     *
+//                        *             * => *     * *     *
+//                        *             *    *     * *     *
+//                        * * * * * * * *    * * * * * * * *
                         temp = new PixelArray(width / 2, height, currentPart.getX(), currentPart.getY());
                         for (int i = 0; i < height; i++)
                             for (int j = 0; j < width / 2; j++)
@@ -117,6 +124,7 @@ public class Magnifier implements Callable<BufferedImage> {
         }
     }
 
+    //adds another spline to array
     private void interpolate(PixelArray colorArray) {
         double[] xCoords = colorArray.getXCoords();
         double[] yCoords = colorArray.getYCoords();
@@ -129,6 +137,7 @@ public class Magnifier implements Callable<BufferedImage> {
         }
     }
 
+    //returns correct pixel value from given coordinates
     private int validValue(double x, double y) {
 
         ArrayList<PiecewiseBicubicSplineInterpolatingFunction> splines = null;
@@ -139,7 +148,7 @@ public class Magnifier implements Callable<BufferedImage> {
         }
 
         double temp = x;
-
+        //coordinates can go beyond the spline so needs to check all 4 options for find their true location
         for (int i = 0; i < 4; i++) {
             for (PiecewiseBicubicSplineInterpolatingFunction spline : splines)
                 if (spline.isValidPoint(x, y))
@@ -157,23 +166,24 @@ public class Magnifier implements Callable<BufferedImage> {
 
     public BufferedImage call() {
 
+        //interpolate red
         stack.push(red);
         currentColorInProcess = RGB.RED;
         splitting();
         stack.clear();
-        //interpolate(red);
 
+        //interpolate green
         stack.push(green);
         currentColorInProcess = RGB.GREEN;
         splitting();
         stack.clear();
-        //interpolate(green);
 
+        //interpolate blue
         stack.push(blue);
         currentColorInProcess = RGB.BLUE;
         splitting();
-        //interpolate(blue);
 
+        //generates zoomed pixel array
         int zoomedWidth = sourceWidth * (zoomCoefficient / 2);
         int zoomedHeight = sourceHeight * (zoomCoefficient / 2);
         int[][] zoomedArray = new int[zoomedHeight][zoomedWidth];
@@ -209,7 +219,8 @@ public class Magnifier implements Callable<BufferedImage> {
             }
         }
 
-        zoomed = new BufferedImage(zoomedWidth, zoomedHeight, BufferedImage.TYPE_3BYTE_BGR);
+        //collects image from array
+        BufferedImage zoomed = new BufferedImage(zoomedWidth, zoomedHeight, BufferedImage.TYPE_3BYTE_BGR);
         for (int i = 0; i < zoomedHeight; i++)
             for (int j = 0; j < zoomedWidth; j++) {
                 zoomed.setRGB(j, i, zoomedArray[i][j]);
