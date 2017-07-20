@@ -3,13 +3,17 @@ package com.constdigit.zoom;
 import com.alee.extended.image.WebImage;
 import com.alee.extended.progress.WebStepProgress;
 import com.alee.laf.WebLookAndFeel;
+import com.alee.utils.filefilter.ImageFilesFilter;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -31,14 +35,19 @@ public class Runner {
     private JLabel sourceImageViewer;
     private JSlider coefficientSlider;
     private WebStepProgress steps;
+    private JButton zoom;
+    private JLabel menu;
+    private JPanel bar;
     private static final Color white = new Color(250, 250, 250);
     private static final Color black = new Color(30, 30, 30);
 
     private Runner() {
         sourceImage = new BufferedImage(300, 300, BufferedImage.TYPE_3BYTE_BGR);
-        for (int i = 0; i < 300; i++)
-            for (int j = 0; j < 300; j++)
-                sourceImage.setRGB(j, i, Color.darkGray.getRGB());
+        try {
+            sourceImage = ImageIO.read(new File("resources/picture.png"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     //generates a list of tasks and runs required number of threads
@@ -142,9 +151,10 @@ public class Runner {
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         frame.setLayout(new BorderLayout(10, 10));
         frame.setResizable(false);
+        frame.getContentPane().setBackground(white);
 
         //keeps title and menu button
-        JPanel bar = new JPanel();
+        bar = new JPanel();
         bar.setLayout(new BorderLayout(10, 10));
         bar.setPreferredSize(new Dimension(620, 100));
         bar.setBackground(black);
@@ -152,13 +162,15 @@ public class Runner {
         //to open source image
         JPanel opener = new JPanel();
         opener.setLayout(new BorderLayout(10, 10));
+        opener.setBackground(white);
 
         //keeps zoom coefficient chooser and button that start zooming
         JPanel zoomingOptions = new JPanel();
         zoomingOptions.setLayout(new BorderLayout(10, 10));
+        zoomingOptions.setBackground(white);
 
         //bar components setting
-        JLabel menu = new JLabel();
+        menu = new JLabel();
         menu.setIcon(new ImageIcon("resources/hamburger-icon.png"));
         JLabel title = new JLabel("Zoomed In");
         title.setForeground(white);
@@ -170,12 +182,12 @@ public class Runner {
         JButton open = new JButton("OPEN");
         open.setAlignmentX(Component.CENTER_ALIGNMENT);
         open.setPreferredSize(new Dimension(300, 40));
-        //open.setOpaque(true);
 
         //zoomingOptions components setting
-        JButton zoom = new JButton("ZOOM");
+        zoom = new JButton("ZOOM");
         zoom.setAlignmentX(Component.CENTER_ALIGNMENT);
         zoom.setPreferredSize(new Dimension(300, 40));
+        zoom.setEnabled(false);
         JLabel hint = new JLabel("Select zoom coefficient:");
         hint.setAlignmentX(Component.CENTER_ALIGNMENT);
         coefficientSlider = new JSlider(JSlider.HORIZONTAL, 4, 16, 4);
@@ -198,6 +210,7 @@ public class Runner {
         steps.addSteps(new WebImage("resources/magnifier-icon.png"));
         steps.addSteps(new WebImage("resources/done-icon.png"));
         steps.setLabelsPosition(SwingConstants.BOTTOM);
+        steps.setBackground(white);
 
         //adding all on frame
         bar.add(BorderLayout.LINE_START, menu);
@@ -214,8 +227,47 @@ public class Runner {
         frame.pack();
         frame.setVisible(true);
 
+        menu.addMouseListener(new menuButtonListener());
         open.addActionListener(new openButtonListener());
         zoom.addActionListener(new zoomButtonListener());
+    }
+
+    private class menuButtonListener implements MouseListener {
+        @Override
+        public void mouseEntered(MouseEvent mouseEvent) {
+            menu.setIcon(new ImageIcon("resources/selected-hamburger-icon.png"));
+            frame.revalidate();
+        }
+
+        @Override
+        public void mouseClicked(MouseEvent mouseEvent) {
+            JPopupMenu popupMenu = new JPopupMenu();
+            JMenuItem back = new JMenuItem(new ImageIcon("resources/back-arrow.png"));
+            back.setPreferredSize(new Dimension(200, 90));
+            popupMenu.add(back);
+            popupMenu.addSeparator();
+            popupMenu.add(new JMenuItem("Open with URL"));
+            popupMenu.add(new JMenuItem("Default open folder"));
+            popupMenu.add(new JMenuItem("Default save folder"));
+            popupMenu.add(new JMenuItem("About"));
+            popupMenu.add(new JMenuItem("Exit"));
+            popupMenu.show(bar, 0, 0);
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent mouseEvent) {
+
+        }
+
+        @Override
+        public void mouseExited(MouseEvent mouseEvent) {
+            menu.setIcon(new ImageIcon("resources/hamburger-icon.png"));
+            frame.revalidate();
+        }
+
+        @Override
+        public void mousePressed(MouseEvent mouseEvent) {
+        }
     }
 
     private class zoomButtonListener implements ActionListener {
@@ -238,7 +290,9 @@ public class Runner {
         @Override
         public void actionPerformed(ActionEvent actionEvent) {
             JFileChooser opener = new JFileChooser();
-            opener.showOpenDialog(frame);
+            opener.setFileFilter(new ImageFilesFilter());
+            if (opener.showOpenDialog(frame) != JFileChooser.APPROVE_OPTION)
+                return;
             if (opener.getSelectedFile() == null)
                 return;
 
@@ -264,6 +318,7 @@ public class Runner {
                 dimg = sourceImage.getScaledInstance(w, sourceImageViewer.getHeight(), Image.SCALE_SMOOTH);
             }
             sourceImageViewer.setIcon(new ImageIcon(dimg));
+            zoom.setEnabled(true);
             //go to step 2
             steps.setSelectedStepIndex(1);
             frame.revalidate();
