@@ -232,6 +232,7 @@ public class Runner {
         steps.addSteps(new WebImage("resources/magnifier-icon.png"));
         steps.addSteps(new WebImage("resources/done-icon.png"));
         steps.setLabelsPosition(SwingConstants.BOTTOM);
+        steps.setSelectionEnabled(false);
         steps.setBackground(white);
 
         //adding all on frame
@@ -272,11 +273,26 @@ public class Runner {
             back.setPreferredSize(new Dimension(200, 90));
             popupMenu.add(back);
             popupMenu.addSeparator();
-            popupMenu.add(new JMenuItem("Open with URL"));
-            popupMenu.add(new JMenuItem("Default open folder"));
-            popupMenu.add(new JMenuItem("Default save folder"));
-            popupMenu.add(new JMenuItem("About"));
-            popupMenu.add(new JMenuItem("Exit"));
+            JMenuItem item = new JMenuItem("Open with URL");
+            item.setFont(new Font("Sans-Serif", Font.PLAIN, 22));
+            item.setPreferredSize(new Dimension(300, 85));
+            popupMenu.add(item);
+            item = new JMenuItem("Default open folder");
+            item.setFont(new Font("Sans-Serif", Font.PLAIN, 22));
+            item.setPreferredSize(new Dimension(300, 85));
+            popupMenu.add(item);
+            item = new JMenuItem("Default save folder");
+            item.setFont(new Font("Sans-Serif", Font.PLAIN, 22));
+            item.setPreferredSize(new Dimension(300, 85));
+            popupMenu.add(item);
+            item = new JMenuItem("About");
+            item.setFont(new Font("Sans-Serif", Font.PLAIN, 22));
+            item.setPreferredSize(new Dimension(300, 85));
+            popupMenu.add(item);
+            item = new JMenuItem("Exit");
+            item.setFont(new Font("Sans-Serif", Font.PLAIN, 22));
+            item.setPreferredSize(new Dimension(300, 85));
+            popupMenu.add(item);
             popupMenu.show(bar, 0, 0);
         }
 
