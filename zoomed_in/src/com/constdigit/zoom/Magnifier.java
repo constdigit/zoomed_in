@@ -13,6 +13,7 @@ public class Magnifier implements Callable<BufferedImage> {
     private enum RGB {RED, GREEN, BLUE}
     private static final byte THRESHOLD = 20;
     static int zoomCoefficient = 4;
+    static boolean isSplittingEnable;
     private int sourceWidth;
     private int sourceHeight;
     private RGB currentColorInProcess;
@@ -166,22 +167,32 @@ public class Magnifier implements Callable<BufferedImage> {
 
     public BufferedImage call() {
 
-        //interpolate red
-        stack.push(red);
-        currentColorInProcess = RGB.RED;
-        splitting();
-        stack.clear();
+        if (isSplittingEnable) {
+            //interpolate red
+            stack.push(red);
+            currentColorInProcess = RGB.RED;
+            splitting();
+            stack.clear();
 
-        //interpolate green
-        stack.push(green);
-        currentColorInProcess = RGB.GREEN;
-        splitting();
-        stack.clear();
+            //interpolate green
+            stack.push(green);
+            currentColorInProcess = RGB.GREEN;
+            splitting();
+            stack.clear();
 
-        //interpolate blue
-        stack.push(blue);
-        currentColorInProcess = RGB.BLUE;
-        splitting();
+            //interpolate blue
+            stack.push(blue);
+            currentColorInProcess = RGB.BLUE;
+            splitting();
+        }
+        else {
+            currentColorInProcess = RGB.RED;
+            interpolate(red);
+            currentColorInProcess = RGB.GREEN;
+            interpolate(green);
+            currentColorInProcess = RGB.BLUE;
+            interpolate(blue);
+        }
 
         //generates zoomed pixel array
         int zoomedWidth = sourceWidth * (zoomCoefficient / 2);

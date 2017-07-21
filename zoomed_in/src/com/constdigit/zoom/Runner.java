@@ -31,13 +31,15 @@ public class Runner {
     private BufferedImage zoomedImage;
     private BufferedImage sourceImage;
     //GUI components
+    private JButton zoom;
+    private JCheckBox multithreading, splittingByThreshold;
     private JFrame frame;
-    private JLabel sourceImageViewer;
+    private JLabel sourceImageViewer, menu;
+    private JPanel bar;
     private JSlider coefficientSlider;
     private WebStepProgress steps;
-    private JButton zoom;
-    private JLabel menu;
-    private JPanel bar;
+
+
     private static final Color white = new Color(250, 250, 250);
     private static final Color black = new Color(30, 30, 30);
 
@@ -52,7 +54,7 @@ public class Runner {
 
     //generates a list of tasks and runs required number of threads
     private void startThreads() {
-        int cores = Runtime.getRuntime().availableProcessors();
+        int cores = multithreading.isSelected() ? Runtime.getRuntime().availableProcessors() : 1;
         ArrayList<Magnifier> tasks = new ArrayList<>();
         ExecutorService service;
 
@@ -178,23 +180,22 @@ public class Runner {
 
         //opener components setting
         sourceImageViewer = new JLabel(new ImageIcon(sourceImage));
-        sourceImageViewer.setAlignmentX(Component.CENTER_ALIGNMENT);
         JButton open = new JButton("OPEN");
-        open.setAlignmentX(Component.CENTER_ALIGNMENT);
         open.setPreferredSize(new Dimension(300, 40));
+        open.setFont(new Font("Sans-Serif", Font.PLAIN, 16));
 
         //zoomingOptions components setting
         zoom = new JButton("ZOOM");
-        zoom.setAlignmentX(Component.CENTER_ALIGNMENT);
         zoom.setPreferredSize(new Dimension(300, 40));
+        zoom.setFont(new Font("Sans-Serif", Font.PLAIN, 16));
         zoom.setEnabled(false);
-        JLabel hint = new JLabel("Select zoom coefficient:");
-        hint.setAlignmentX(Component.CENTER_ALIGNMENT);
+        JLabel sliderTip = new JLabel("Select zoom coefficient:");
+        sliderTip.setFont(new Font("Sans-Serif", Font.PLAIN, 14));
         coefficientSlider = new JSlider(JSlider.HORIZONTAL, 4, 16, 4);
-        coefficientSlider.setAlignmentX(Component.CENTER_ALIGNMENT);
         coefficientSlider.setMajorTickSpacing(4);
         coefficientSlider.setSnapToTicks(true);
         coefficientSlider.setPaintTicks(true);
+        coefficientSlider.setFont(new Font("Sans-Serif", Font.PLAIN, 14));
         //create the label table
         Hashtable labelTable = new Hashtable();
         labelTable.put(4, new JLabel("x4") );
@@ -203,6 +204,27 @@ public class Runner {
         labelTable.put( 16, new JLabel("x16") );
         coefficientSlider.setLabelTable( labelTable );
         coefficientSlider.setPaintLabels(true);
+        JPanel sliderPanel = new JPanel(new BorderLayout(10, 10));
+        sliderPanel.setBackground(white);
+        sliderPanel.add(BorderLayout.PAGE_START, sliderTip);
+        sliderPanel.add(BorderLayout.PAGE_END, coefficientSlider);
+        //check boxes
+        JLabel checkBoxesTip = new JLabel("Uncheck this if you have some artifacts:");
+        checkBoxesTip.setFont(new Font("Sans-Serif", Font.PLAIN, 14));
+        multithreading = new JCheckBox("Use multithreading");
+        multithreading.setSelected(true);
+        multithreading.setFont(new Font("Sans-Serif", Font.PLAIN, 14));
+        splittingByThreshold = new JCheckBox("Use splitting by threshold");
+        splittingByThreshold.setSelected(true);
+        splittingByThreshold.setFont(new Font("Sans-Serif", Font.PLAIN, 14));
+        JPanel checkBoxesPanel = new JPanel();
+        checkBoxesPanel.setBackground(white);
+        checkBoxesPanel.setLayout(new BoxLayout(checkBoxesPanel, BoxLayout.Y_AXIS));
+        checkBoxesPanel.add( checkBoxesTip);
+        checkBoxesPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+        checkBoxesPanel.add( multithreading);
+        checkBoxesPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+        checkBoxesPanel.add( splittingByThreshold);
 
         //stepper settings
         steps = new WebStepProgress();
@@ -217,8 +239,8 @@ public class Runner {
         bar.add(BorderLayout.CENTER, title);
         opener.add(BorderLayout.PAGE_END, open);
         opener.add(BorderLayout.PAGE_START, sourceImageViewer);
-        zoomingOptions.add(BorderLayout.PAGE_START, hint);
-        zoomingOptions.add(BorderLayout.CENTER, coefficientSlider);
+        zoomingOptions.add(BorderLayout.PAGE_START, sliderPanel);
+        zoomingOptions.add(BorderLayout.CENTER, checkBoxesPanel);
         zoomingOptions.add(BorderLayout.PAGE_END, zoom);
         frame.add(BorderLayout.PAGE_START, bar);
         frame.add(BorderLayout.LINE_START, opener);
@@ -241,6 +263,10 @@ public class Runner {
 
         @Override
         public void mouseClicked(MouseEvent mouseEvent) {
+            generateMenu();
+        }
+
+        private void generateMenu() {
             JPopupMenu popupMenu = new JPopupMenu();
             JMenuItem back = new JMenuItem(new ImageIcon("resources/back-arrow.png"));
             back.setPreferredSize(new Dimension(200, 90));
@@ -256,7 +282,7 @@ public class Runner {
 
         @Override
         public void mouseReleased(MouseEvent mouseEvent) {
-
+            generateMenu();
         }
 
         @Override
@@ -275,6 +301,7 @@ public class Runner {
         public void actionPerformed(ActionEvent actionEvent) {
             //get selected zoom coefficient
             Magnifier.zoomCoefficient = coefficientSlider.getValue();
+            Magnifier.isSplittingEnable = splittingByThreshold.isSelected();
             startThreads();
             //work is done
             steps.setSelectedStepIndex(2);
