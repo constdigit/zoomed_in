@@ -26,14 +26,14 @@ import java.util.concurrent.Future;
 /*
     Works with gui and threads
  */
-public class Runner {
+public class Runner extends JFrame {
 
     private BufferedImage zoomedImage;
     private BufferedImage sourceImage;
+    private boolean isZoomingStarted;
     //GUI components
     private JButton zoom;
     private JCheckBox multithreading, splittingByThreshold;
-    private JFrame frame;
     private JLabel sourceImageViewer, menu;
     private JPanel bar;
     private JSlider coefficientSlider;
@@ -44,6 +44,8 @@ public class Runner {
     private static final Color black = new Color(30, 30, 30);
 
     private Runner() {
+        super("Zoomed In");
+        isZoomingStarted = false;
         sourceImage = new BufferedImage(300, 300, BufferedImage.TYPE_3BYTE_BGR);
         try {
             sourceImage = ImageIO.read(new File("resources/picture.png"));
@@ -149,11 +151,10 @@ public class Runner {
         //set LaF
         WebLookAndFeel.install ();
         //init frame
-        frame = new JFrame("Zoomed In");
-        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        frame.setLayout(new BorderLayout(10, 10));
-        frame.setResizable(false);
-        frame.getContentPane().setBackground(white);
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        setLayout(new BorderLayout(10, 10));
+        setResizable(false);
+        getContentPane().setBackground(white);
 
         //keeps title and menu button
         bar = new JPanel();
@@ -243,12 +244,12 @@ public class Runner {
         zoomingOptions.add(BorderLayout.PAGE_START, sliderPanel);
         zoomingOptions.add(BorderLayout.CENTER, checkBoxesPanel);
         zoomingOptions.add(BorderLayout.PAGE_END, zoom);
-        frame.add(BorderLayout.PAGE_START, bar);
-        frame.add(BorderLayout.LINE_START, opener);
-        frame.add(BorderLayout.LINE_END, zoomingOptions);
-        frame.add(BorderLayout.PAGE_END, steps);
-        frame.pack();
-        frame.setVisible(true);
+        add(BorderLayout.PAGE_START, bar);
+        add(BorderLayout.LINE_START, opener);
+        add(BorderLayout.LINE_END, zoomingOptions);
+        add(BorderLayout.PAGE_END, steps);
+        pack();
+        setVisible(true);
 
         menu.addMouseListener(new menuButtonListener());
         open.addActionListener(new openButtonListener());
@@ -259,11 +260,22 @@ public class Runner {
         @Override
         public void mouseEntered(MouseEvent mouseEvent) {
             menu.setIcon(new ImageIcon("resources/selected-hamburger-icon.png"));
-            frame.revalidate();
+            revalidate();
+        }
+
+        @Override
+        public void mouseExited(MouseEvent mouseEvent) {
+            menu.setIcon(new ImageIcon("resources/hamburger-icon.png"));
+            revalidate();
         }
 
         @Override
         public void mouseClicked(MouseEvent mouseEvent) {
+            generateMenu();
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent mouseEvent) {
             generateMenu();
         }
 
@@ -297,18 +309,8 @@ public class Runner {
         }
 
         @Override
-        public void mouseReleased(MouseEvent mouseEvent) {
-            generateMenu();
-        }
-
-        @Override
-        public void mouseExited(MouseEvent mouseEvent) {
-            menu.setIcon(new ImageIcon("resources/hamburger-icon.png"));
-            frame.revalidate();
-        }
-
-        @Override
         public void mousePressed(MouseEvent mouseEvent) {
+            //action is not required
         }
     }
 
@@ -318,7 +320,20 @@ public class Runner {
             //get selected zoom coefficient
             Magnifier.zoomCoefficient = coefficientSlider.getValue();
             Magnifier.isSplittingEnable = splittingByThreshold.isSelected();
+
+            //frame goes to wait
+            isZoomingStarted = true;
+            repaint();
+            setEnabled(false);
+
+            //all processing takes place here
             startThreads();
+
+            //frame awakening
+            setEnabled(true);
+            isZoomingStarted = false;
+            repaint();
+
             //work is done
             steps.setSelectedStepIndex(2);
             //show result in new frame (in future - it would be saved in file or import in cloud)
@@ -332,12 +347,13 @@ public class Runner {
     private class openButtonListener implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent actionEvent) {
+            //open image from file
             JFileChooser opener = new JFileChooser();
             opener.setFileFilter(new ImageFilesFilter());
-            if (opener.showOpenDialog(frame) != JFileChooser.APPROVE_OPTION)
-                return;
-            if (opener.getSelectedFile() == null)
-                return;
+
+            //nothing selected
+            if (opener.showOpenDialog(Runner.this) != JFileChooser.APPROVE_OPTION) return;
+            if (opener.getSelectedFile() == null) return;
 
             try {
                 sourceImage = ImageIO.read(opener.getSelectedFile());
@@ -364,8 +380,23 @@ public class Runner {
             zoom.setEnabled(true);
             //go to step 2
             steps.setSelectedStepIndex(1);
-            frame.revalidate();
+            revalidate();
         }
+    }
+
+    @Override
+    public void paint(Graphics g) {
+        if (isZoomingStarted) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            // Gray it out.
+            Composite urComposite = g2.getComposite();
+            g2.setComposite(AlphaComposite.getInstance(
+                    AlphaComposite.SRC_OVER, .5f));
+            g2.fillRect(0, 0, getWidth(), getHeight());
+            g2.setComposite(urComposite);
+        }
+        else
+            super.paint(g);
     }
 
     public static void main(String[] args) {
