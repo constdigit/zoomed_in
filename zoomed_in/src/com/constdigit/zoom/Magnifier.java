@@ -8,6 +8,9 @@ import java.util.concurrent.Callable;
 
 import org.apache.commons.math3.analysis.interpolation.PiecewiseBicubicSplineInterpolatingFunction;
 
+/*
+    Processes part of the whole image in a separate thread
+ */
 public class Magnifier implements Callable<BufferedImage> {
     //supporting
     private enum RGB {RED, GREEN, BLUE}

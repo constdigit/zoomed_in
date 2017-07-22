@@ -4,6 +4,7 @@ import com.alee.extended.image.WebImage;
 import com.alee.extended.progress.WebStepProgress;
 import com.alee.laf.WebLookAndFeel;
 import com.alee.utils.filefilter.ImageFilesFilter;
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -14,7 +15,12 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
@@ -30,6 +36,7 @@ public class Runner extends JFrame {
 
     private BufferedImage zoomedImage;
     private BufferedImage sourceImage;
+    private DefaultFolders settings;
     private boolean isZoomingStarted;
     //GUI components
     private JButton zoom;
@@ -39,18 +46,19 @@ public class Runner extends JFrame {
     private JSlider coefficientSlider;
     private WebStepProgress steps;
 
-
     private static final Color white = new Color(250, 250, 250);
     private static final Color black = new Color(30, 30, 30);
 
     private Runner() {
         super("Zoomed In");
         isZoomingStarted = false;
+        settings = DefaultFolders.getInstance();
+        settings.restoreSettings();
         sourceImage = new BufferedImage(300, 300, BufferedImage.TYPE_3BYTE_BGR);
         try {
             sourceImage = ImageIO.read(new File("resources/picture.png"));
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (IOException ex) {
+            ex.printStackTrace();
         }
     }
 
@@ -256,6 +264,57 @@ public class Runner extends JFrame {
         zoom.addActionListener(new zoomButtonListener());
     }
 
+    private void putImageOnFrame() {
+        //adjust size
+        Image dimg = sourceImage;
+        int w = sourceImage.getWidth(), h = sourceImage.getHeight();
+        if (w > sourceImageViewer.getWidth()) {
+            double imgWidth = sourceImage.getWidth();
+            double lblWidth = sourceImageViewer.getWidth();
+            h = (int)((lblWidth / imgWidth) * (double) sourceImage.getHeight());
+            dimg = sourceImage.getScaledInstance(sourceImageViewer.getWidth(), h, Image.SCALE_SMOOTH);
+        }
+        if (h > sourceImageViewer.getHeight()) {
+            double imgHeight = sourceImage.getHeight();
+            double lblHeight = sourceImageViewer.getHeight();
+            w = (int)((lblHeight / imgHeight) * (double) sourceImage.getWidth());
+            dimg = sourceImage.getScaledInstance(w, sourceImageViewer.getHeight(), Image.SCALE_SMOOTH);
+        }
+        sourceImageViewer.setIcon(new ImageIcon(dimg));
+        zoom.setEnabled(true);
+        //go to step 2
+        steps.setSelectedStepIndex(1);
+        revalidate();
+    }
+
+    private void saveAndShowZoomedImage() {
+        JFileChooser saver = new JFileChooser(settings.getDefaultSaveFolder());
+        int option = saver.showSaveDialog(Runner.this);
+        File dist = saver.getSelectedFile();
+        //try to save
+        if (option == JFileChooser.APPROVE_OPTION && dist != null) {
+            try {
+                dist = new File(dist.toString() + ".png");
+                ImageIO.write(zoomedImage, "png", dist);
+            }
+            catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+        else
+            return;
+
+        //show saved image
+        Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
+        if (desktop != null && desktop.isSupported(Desktop.Action.OPEN)) {
+            try {
+                desktop.open(dist);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
+    }
+
     private class menuButtonListener implements MouseListener {
         @Override
         public void mouseEntered(MouseEvent mouseEvent) {
@@ -281,36 +340,94 @@ public class Runner extends JFrame {
 
         private void generateMenu() {
             JPopupMenu popupMenu = new JPopupMenu();
+            ActionListener actionListener = new menuItemsListener();
+
             JMenuItem back = new JMenuItem(new ImageIcon("resources/back-arrow.png"));
             back.setPreferredSize(new Dimension(200, 90));
             popupMenu.add(back);
             popupMenu.addSeparator();
-            JMenuItem item = new JMenuItem("Open with URL");
+
+            JMenuItem item = new JMenuItem("Open from URL");
             item.setFont(new Font("Sans-Serif", Font.PLAIN, 22));
             item.setPreferredSize(new Dimension(300, 85));
+            item.addActionListener(actionListener);
             popupMenu.add(item);
+
             item = new JMenuItem("Default open folder");
             item.setFont(new Font("Sans-Serif", Font.PLAIN, 22));
             item.setPreferredSize(new Dimension(300, 85));
+            item.addActionListener(actionListener);
             popupMenu.add(item);
+
             item = new JMenuItem("Default save folder");
             item.setFont(new Font("Sans-Serif", Font.PLAIN, 22));
             item.setPreferredSize(new Dimension(300, 85));
+            item.addActionListener(actionListener);
             popupMenu.add(item);
+
             item = new JMenuItem("About");
             item.setFont(new Font("Sans-Serif", Font.PLAIN, 22));
             item.setPreferredSize(new Dimension(300, 85));
+            item.addActionListener(actionListener);
             popupMenu.add(item);
+
             item = new JMenuItem("Exit");
             item.setFont(new Font("Sans-Serif", Font.PLAIN, 22));
             item.setPreferredSize(new Dimension(300, 85));
+            item.addActionListener(actionListener);
             popupMenu.add(item);
+
             popupMenu.show(bar, 0, 0);
         }
 
         @Override
         public void mousePressed(MouseEvent mouseEvent) {
             //action is not required
+        }
+    }
+
+    private class menuItemsListener implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent actionEvent) {
+            switch (actionEvent.getActionCommand()) {
+                case "Open from URL" :  openFromUrl(); break;
+                case "Default open folder" : setDefaultOpenFolder(); break;
+                case "Default save folder" : setDefaultSaveFolder(); break;
+                case "About" : showAbout(); break;
+                case "Exit" : System.exit(0);
+            }
+        }
+
+        private void openFromUrl() {
+            String url = JOptionPane.showInputDialog("URL: ");
+            try {
+                sourceImage = ImageIO.read(new URL(url));
+            }
+            catch (IOException ex) {
+                ex.printStackTrace();
+                return;
+            }
+
+            putImageOnFrame();
+        }
+
+        private void setDefaultOpenFolder() {
+
+        }
+
+        private void setDefaultSaveFolder() {
+
+        }
+
+        private void showAbout() {
+            Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
+            if (desktop != null && desktop.isSupported(Desktop.Action.OPEN)) {
+                try {
+                    desktop.open(new File("resources/Readme.txt"));
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
         }
     }
 
@@ -336,11 +453,7 @@ public class Runner extends JFrame {
 
             //work is done
             steps.setSelectedStepIndex(2);
-            //show result in new frame (in future - it would be saved in file or import in cloud)
-            JFrame resultImage = new JFrame("Zoomed");
-            resultImage.add(BorderLayout.CENTER, new JLabel(new ImageIcon(zoomedImage)));
-            resultImage.pack();
-            resultImage.setVisible(true);
+            saveAndShowZoomedImage();
         }
     }
 
@@ -348,7 +461,7 @@ public class Runner extends JFrame {
         @Override
         public void actionPerformed(ActionEvent actionEvent) {
             //open image from file
-            JFileChooser opener = new JFileChooser();
+            JFileChooser opener = new JFileChooser(settings.getDefaultOpenFolder());
             opener.setFileFilter(new ImageFilesFilter());
 
             //nothing selected
@@ -357,30 +470,12 @@ public class Runner extends JFrame {
 
             try {
                 sourceImage = ImageIO.read(opener.getSelectedFile());
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                return;
             }
 
-            //adjust size
-            Image dimg = sourceImage;
-            int w = sourceImage.getWidth(), h = sourceImage.getHeight();
-            if (w > sourceImageViewer.getWidth()) {
-                double imgWidth = sourceImage.getWidth();
-                double lblWidth = sourceImageViewer.getWidth();
-                h = (int)((lblWidth / imgWidth) * (double) sourceImage.getHeight());
-                dimg = sourceImage.getScaledInstance(sourceImageViewer.getWidth(), h, Image.SCALE_SMOOTH);
-            }
-            if (h > sourceImageViewer.getHeight()) {
-                double imgHeight = sourceImage.getHeight();
-                double lblHeight = sourceImageViewer.getHeight();
-                w = (int)((lblHeight / imgHeight) * (double) sourceImage.getWidth());
-                dimg = sourceImage.getScaledInstance(w, sourceImageViewer.getHeight(), Image.SCALE_SMOOTH);
-            }
-            sourceImageViewer.setIcon(new ImageIcon(dimg));
-            zoom.setEnabled(true);
-            //go to step 2
-            steps.setSelectedStepIndex(1);
-            revalidate();
+            putImageOnFrame();
         }
     }
 
