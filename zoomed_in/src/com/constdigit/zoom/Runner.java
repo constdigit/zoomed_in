@@ -485,6 +485,11 @@ public class Runner extends JFrame {
                 return;
             }
 
+            if (sourceImage.getWidth() < 10 && sourceImage.getHeight() < 10) {
+                JOptionPane.showMessageDialog(Runner.this, "Image should be larger than 10x10","Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
             putImageOnFrame();
         }
     }

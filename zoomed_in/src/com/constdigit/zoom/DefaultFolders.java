@@ -22,7 +22,7 @@ class DefaultFolders implements Serializable{
 
     void saveSettings() {
         try {
-            ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream(this.getClass().getResource("/resources/settings.ser").getPath()));
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream("settings.ser"));
             objectOutputStream.writeObject(defaultOpenFolder);
             objectOutputStream.writeObject(defaultSaveFolder);
         }
@@ -33,7 +33,7 @@ class DefaultFolders implements Serializable{
 
     void restoreSettings() {
         try {
-            ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(this.getClass().getResource("/resources/settings.ser").getPath()));
+            ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream("settings.ser"));
             defaultOpenFolder = (File) objectInputStream.readObject();
             defaultSaveFolder = (File) objectInputStream.readObject();
         }
