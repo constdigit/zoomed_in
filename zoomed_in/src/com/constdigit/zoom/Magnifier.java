@@ -1,12 +1,12 @@
 package com.constdigit.zoom;
 
-import java.awt.Color;
+import org.apache.commons.math3.analysis.interpolation.PiecewiseBicubicSplineInterpolatingFunction;
+
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Stack;
 import java.util.concurrent.Callable;
-
-import org.apache.commons.math3.analysis.interpolation.PiecewiseBicubicSplineInterpolatingFunction;
 
 /*
     Processes part of the whole image in a separate thread

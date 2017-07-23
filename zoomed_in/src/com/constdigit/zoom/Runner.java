@@ -4,7 +4,6 @@ import com.alee.extended.image.WebImage;
 import com.alee.extended.progress.WebStepProgress;
 import com.alee.laf.WebLookAndFeel;
 import com.alee.utils.filefilter.ImageFilesFilter;
-import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -15,11 +14,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -56,7 +51,8 @@ public class Runner extends JFrame {
         settings.restoreSettings();
         sourceImage = new BufferedImage(300, 300, BufferedImage.TYPE_3BYTE_BGR);
         try {
-            sourceImage = ImageIO.read(new File("resources/picture.png"));
+            //sourceImage = ImageIO.read(new File("resources/picture.png"));
+            sourceImage = ImageIO.read(this.getClass().getResource("/resources/picture.png"));
         } catch (IOException ex) {
             ex.printStackTrace();
         }
@@ -182,7 +178,7 @@ public class Runner extends JFrame {
 
         //bar components setting
         menu = new JLabel();
-        menu.setIcon(new ImageIcon("resources/hamburger-icon.png"));
+        menu.setIcon(new ImageIcon(this.getClass().getResource("/resources/hamburger-icon.png")));
         JLabel title = new JLabel("Zoomed In");
         title.setForeground(white);
         title.setFont(new Font("Sans-Serif", Font.PLAIN, 42));
@@ -237,9 +233,9 @@ public class Runner extends JFrame {
 
         //stepper settings
         steps = new WebStepProgress();
-        steps.addSteps(new WebImage("resources/folder-icon.png"));
-        steps.addSteps(new WebImage("resources/magnifier-icon.png"));
-        steps.addSteps(new WebImage("resources/done-icon.png"));
+        steps.addSteps(new WebImage(this.getClass().getResource("/resources/folder-icon.png")));
+        steps.addSteps(new WebImage(this.getClass().getResource("/resources/magnifier-icon.png")));
+        steps.addSteps(new WebImage(this.getClass().getResource("/resources/done-icon.png")));
         steps.setLabelsPosition(SwingConstants.BOTTOM);
         steps.setSelectionEnabled(false);
         steps.setBackground(white);
@@ -320,13 +316,13 @@ public class Runner extends JFrame {
     private class menuButtonListener implements MouseListener {
         @Override
         public void mouseEntered(MouseEvent mouseEvent) {
-            menu.setIcon(new ImageIcon("resources/selected-hamburger-icon.png"));
+            menu.setIcon(new ImageIcon(this.getClass().getResource("/resources/selected-hamburger-icon.png")));
             revalidate();
         }
 
         @Override
         public void mouseExited(MouseEvent mouseEvent) {
-            menu.setIcon(new ImageIcon("resources/hamburger-icon.png"));
+            menu.setIcon(new ImageIcon(this.getClass().getResource("/resources/hamburger-icon.png")));
             revalidate();
         }
 
@@ -344,7 +340,7 @@ public class Runner extends JFrame {
             JPopupMenu popupMenu = new JPopupMenu();
             ActionListener actionListener = new menuItemsListener();
 
-            JMenuItem back = new JMenuItem(new ImageIcon("resources/back-arrow.png"));
+            JMenuItem back = new JMenuItem(new ImageIcon(this.getClass().getResource("/resources/back-arrow.png")));
             back.setPreferredSize(new Dimension(200, 90));
             popupMenu.add(back);
             popupMenu.addSeparator();
@@ -402,7 +398,8 @@ public class Runner extends JFrame {
 
         private void openFromUrl() {
             //JOptionPane inputUrl = new JOptionPane("Open from URL", JOptionPane.PLAIN_MESSAGE, JOptionPane.DEFAULT_OPTION, new ImageIcon("resources/url-icon.png"));
-            String url = (String) JOptionPane.showInputDialog(Runner.this, "URL:", "Open from URL", JOptionPane.PLAIN_MESSAGE, new ImageIcon("resources/url-icon.png"), null, null);
+            String url = (String) JOptionPane.showInputDialog(Runner.this, "URL:", "Open from URL",
+                    JOptionPane.PLAIN_MESSAGE, new ImageIcon(this.getClass().getResource("/resources/url-icon.png")), null, null);
             try {
                 sourceImage = ImageIO.read(new URL(url));
             }
@@ -436,7 +433,7 @@ public class Runner extends JFrame {
             Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
             if (desktop != null && desktop.isSupported(Desktop.Action.OPEN)) {
                 try {
-                    desktop.open(new File("resources/Readme.txt"));
+                    desktop.open(new File(this.getClass().getResource("/resources/Readme.txt").toURI()));
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }

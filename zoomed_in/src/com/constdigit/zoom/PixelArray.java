@@ -1,7 +1,5 @@
 package com.constdigit.zoom;
 
-import java.util.ArrayList;
-
 /*
     Represents part of source image via pixels array
  */
