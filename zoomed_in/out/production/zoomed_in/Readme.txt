@@ -1,1 +1,1 @@
-something about this 
+something about this app

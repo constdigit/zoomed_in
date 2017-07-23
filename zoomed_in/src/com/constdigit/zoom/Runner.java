@@ -265,6 +265,8 @@ public class Runner extends JFrame {
     }
 
     private void putImageOnFrame() {
+
+        sourceImageViewer.setSize(300, 300);
         //adjust size
         Image dimg = sourceImage;
         int w = sourceImage.getWidth(), h = sourceImage.getHeight();
@@ -399,7 +401,8 @@ public class Runner extends JFrame {
         }
 
         private void openFromUrl() {
-            String url = JOptionPane.showInputDialog("URL: ");
+            //JOptionPane inputUrl = new JOptionPane("Open from URL", JOptionPane.PLAIN_MESSAGE, JOptionPane.DEFAULT_OPTION, new ImageIcon("resources/url-icon.png"));
+            String url = (String) JOptionPane.showInputDialog(Runner.this, "URL:", "Open from URL", JOptionPane.PLAIN_MESSAGE, new ImageIcon("resources/url-icon.png"), null, null);
             try {
                 sourceImage = ImageIO.read(new URL(url));
             }
@@ -412,11 +415,21 @@ public class Runner extends JFrame {
         }
 
         private void setDefaultOpenFolder() {
-
+            JFileChooser directoryChooser = new JFileChooser();
+            directoryChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            directoryChooser.setApproveButtonText("Select");
+            if (directoryChooser.showOpenDialog(Runner.this) != JFileChooser.APPROVE_OPTION) return;
+            settings.setDefaultOpenFolder(directoryChooser.getSelectedFile());
+            settings.saveSettings();
         }
 
         private void setDefaultSaveFolder() {
-
+            JFileChooser directoryChooser = new JFileChooser();
+            directoryChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            directoryChooser.setApproveButtonText("Select");
+            if (directoryChooser.showOpenDialog(Runner.this) != JFileChooser.APPROVE_OPTION) return;
+            settings.setDefaultSaveFolder(directoryChooser.getSelectedFile());
+            settings.saveSettings();
         }
 
         private void showAbout() {

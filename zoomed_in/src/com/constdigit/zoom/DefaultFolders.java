@@ -11,7 +11,6 @@ class DefaultFolders implements Serializable{
     private DefaultFolders() {
         defaultOpenFolder = null;
         defaultSaveFolder = null;
-        askedBeforeSaving = true;
     }
 
     static DefaultFolders getInstance() {
@@ -26,7 +25,6 @@ class DefaultFolders implements Serializable{
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream("resources/settings.ser"));
             objectOutputStream.writeObject(defaultOpenFolder);
             objectOutputStream.writeObject(defaultSaveFolder);
-            objectOutputStream.writeObject(askedBeforeSaving);
         }
         catch (IOException ex) {
             ex.printStackTrace();
@@ -38,12 +36,10 @@ class DefaultFolders implements Serializable{
             ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream("resources/settings.ser"));
             defaultOpenFolder = (File) objectInputStream.readObject();
             defaultSaveFolder = (File) objectInputStream.readObject();
-            askedBeforeSaving = (boolean) objectInputStream.readObject();
         }
         catch (FileNotFoundException ex) {
             defaultOpenFolder = null;
             defaultSaveFolder = null;
-            askedBeforeSaving = true;
         }
         catch (IOException | ClassNotFoundException ex) {
             ex.printStackTrace();
@@ -58,10 +54,6 @@ class DefaultFolders implements Serializable{
         return defaultSaveFolder;
     }
 
-    boolean isAskedBeforeSaving() {
-        return askedBeforeSaving;
-    }
-
     void setDefaultOpenFolder(File defaultOpenFolder) {
         if (defaultOpenFolder.isDirectory())
             this.defaultOpenFolder = defaultOpenFolder;
@@ -70,9 +62,5 @@ class DefaultFolders implements Serializable{
     void setDefaultSaveFolder(File defaultSaveFolder) {
         if (defaultSaveFolder.isDirectory())
             this.defaultSaveFolder = defaultSaveFolder;
-    }
-
-    void setAskedBeforeSaving(boolean askedBeforeSaving) {
-        this.askedBeforeSaving = askedBeforeSaving;
     }
 }
