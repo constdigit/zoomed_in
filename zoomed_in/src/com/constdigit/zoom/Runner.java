@@ -430,14 +430,10 @@ public class Runner extends JFrame {
         }
 
         private void showAbout() {
-            Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
-            if (desktop != null && desktop.isSupported(Desktop.Action.OPEN)) {
-                try {
-                    desktop.open(new File(this.getClass().getResource("/resources/Readme.txt").toURI()));
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            }
+            JFrame about = new JFrame("About");
+            about.add(new JLabel(new ImageIcon(this.getClass().getResource("/resources/about.png"))));
+            about.pack();
+            about.setVisible(true);
         }
     }
 
