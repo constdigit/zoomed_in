@@ -15,7 +15,7 @@ ___
 ## How it works
 The image is represented as three arrays (red, green, blue) that contain the color values of each pixel. Elements of arrays are used as knots for constructing bicubic splines. After that, values of additional pixels are calculated. Resulting arrays transforms to image.
 
-Multithreading functions allows program to use all available cores.
+Multithreading allows program to use all available cores.
 
 Splitting by threshold allows you to take into account contents of the image and use one function for interpolation on a monotone section. But this option is cause of slow working of program during processing big images.
 
@@ -27,7 +27,7 @@ On x-axis - amount of pixels.
 
 On y-axis - time in seconds.
 
-![O(n)](https://lh4.googleusercontent.com/3GX0qhcCUloU_Odm97dz5MUZCJ75xLFkBgwuKmx-q72ciyn-rMfX3OzFLtHTteGebC91zwdPn78pxPM=w1920-h956)
+![O(n)](https://goo.gl/7LYfHV)
 
 ___
 ## Conclusion
