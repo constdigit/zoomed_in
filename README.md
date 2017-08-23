@@ -1,5 +1,5 @@
 # Zoomed In
-Image interpolation
+![screenshot](screenshot.png)
 ___
 ## About
 This program can improve resolution of your images without loss of quality (almost). Simple and convenient GUI, several useful options will helps you in this.
@@ -27,7 +27,7 @@ On x-axis - amount of pixels.
 
 On y-axis - time in seconds.
 
-![O(n)](https://goo.gl/7LYfHV)
+![O(n)](complexity.png)
 
 ___
 ## Conclusion
