@@ -28,7 +28,3 @@ On x-axis - amount of pixels.
 On y-axis - time in seconds.
 
 ![O(n)](complexity.png)
-
-___
-## Conclusion
-I just wanted to learn java.
